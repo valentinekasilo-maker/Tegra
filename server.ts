@@ -486,7 +486,7 @@ async function startServer() {
   } else {
     // Dynamic Vite middleware (handles dev or when dist wasn't prebuilt)
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, allowedHosts: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
