@@ -25,6 +25,7 @@ import {
   pcm24kBase64ToFloat32,
   computeRmsLevel,
 } from "./utils/audio";
+import { setupGlobalHaptics, triggerHaptic } from "./utils/haptics";
 
 export interface ExchangeItem {
   id: string;
@@ -128,6 +129,12 @@ export default function App() {
   const liveAgentDraftRef = useRef<string>("");
   const selectedVoiceRef = useRef<VoiceName>(selectedVoice);
   const waitingForLiveReplyRef = useRef<boolean>(false);
+
+  // Initialize universal tactile haptic vibration listener on mount
+  useEffect(() => {
+    const cleanupHaptics = setupGlobalHaptics();
+    return cleanupHaptics;
+  }, []);
 
   // iPhone-style boot "hello" screen transition
   useEffect(() => {
@@ -537,6 +544,7 @@ export default function App() {
   );
 
   const handleOrbToggle = () => {
+    triggerHaptic("heavy");
     if (isLiveConnected) {
       if (
         sessionState === "listening" &&
@@ -567,6 +575,7 @@ export default function App() {
     cachedAudio?: string,
     id: string = "current"
   ) => {
+    triggerHaptic("medium");
     if (playingId === id) {
       stopOutputPlayback();
       return;
@@ -610,11 +619,13 @@ export default function App() {
     e.preventDefault();
     const q = textInput.trim();
     if (!q) return;
+    triggerHaptic("success");
     setTextInput("");
     await askTegra(q);
   };
 
   const handleReset = () => {
+    triggerHaptic("warning");
     stopLiveSession();
     setCurrentPrompt("");
     setCurrentReply("");
@@ -626,7 +637,11 @@ export default function App() {
   if (isBooting) {
     return (
       <div
-        onClick={() => setIsBooting(false)}
+        data-haptic="medium"
+        onClick={() => {
+          triggerHaptic("medium");
+          setIsBooting(false);
+        }}
         className="min-h-screen flex flex-col items-center justify-center bg-[#070A12] text-white px-6 select-none cursor-pointer relative overflow-hidden"
       >
         <div
@@ -653,11 +668,12 @@ export default function App() {
       <header className="relative z-20 flex items-center justify-between px-6 py-4 max-w-5xl w-full mx-auto">
         <a
           href="#top"
+          data-haptic="selection"
           onClick={(e) => {
             e.preventDefault();
             handleReset();
           }}
-          className="text-xl font-semibold tracking-tight text-white whitespace-nowrap"
+          className="text-xl font-semibold tracking-tight text-white whitespace-nowrap cursor-pointer"
         >
           Tegra
         </a>
@@ -665,7 +681,9 @@ export default function App() {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            data-haptic="light"
             onClick={() => {
+              triggerHaptic("light");
               setSettingsTab("voices");
               setShowSettingsModal(true);
             }}
@@ -691,8 +709,12 @@ export default function App() {
             </div>
             <button
               type="button"
-              onClick={() => setErrorMessage(null)}
-              className="text-xs font-medium text-red-300 hover:text-white whitespace-nowrap"
+              data-haptic="light"
+              onClick={() => {
+                triggerHaptic("light");
+                setErrorMessage(null);
+              }}
+              className="text-xs font-medium text-red-300 hover:text-white whitespace-nowrap cursor-pointer"
             >
               Dismiss
             </button>
@@ -738,6 +760,7 @@ export default function App() {
                 <div className="flex items-center justify-center gap-4 pt-1">
                   <button
                     type="button"
+                    data-haptic="medium"
                     onClick={() =>
                       handleReplayText(
                         currentReply,
@@ -762,6 +785,7 @@ export default function App() {
                   </button>
                   <button
                     type="button"
+                    data-haptic="warning"
                     onClick={handleReset}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
                   >
@@ -809,9 +833,10 @@ export default function App() {
             />
             <button
               type="submit"
+              data-haptic="success"
               disabled={!textInput.trim() || sessionState === "thinking"}
               aria-label="Send message"
-              className="min-h-[40px] px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs disabled:opacity-40 transition-colors whitespace-nowrap"
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold text-xs disabled:opacity-40 transition-colors whitespace-nowrap cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -822,7 +847,9 @@ export default function App() {
           {/* Left Button: Mute / Unmute Mic */}
           <button
             type="button"
+            data-haptic="medium"
             onClick={() => {
+              triggerHaptic("medium");
               if (isLiveConnected) {
                 setIsMuted((m) => !m);
               } else {
@@ -864,7 +891,11 @@ export default function App() {
           {/* Right Button: Toggle Type to Tegra */}
           <button
             type="button"
-            onClick={() => setShowKeyboard((k) => !k)}
+            data-haptic="light"
+            onClick={() => {
+              triggerHaptic("light");
+              setShowKeyboard((k) => !k);
+            }}
             aria-label="Type to Tegra"
             title="Type to Tegra"
             className={`min-w-[48px] min-h-[48px] rounded-full flex items-center justify-center border transition-colors cursor-pointer ${
@@ -885,7 +916,10 @@ export default function App() {
           aria-modal="true"
           aria-labelledby="tegra-settings-title"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setShowSettingsModal(false);
+            if (e.target === e.currentTarget) {
+              triggerHaptic("light");
+              setShowSettingsModal(false);
+            }
           }}
           className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4"
         >
@@ -906,7 +940,11 @@ export default function App() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowSettingsModal(false)}
+                data-haptic="light"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setShowSettingsModal(false);
+                }}
                 aria-label="Close settings modal"
                 className="min-w-[44px] min-h-[44px] -mr-2 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               >
@@ -919,7 +957,11 @@ export default function App() {
               <div className="grid grid-cols-2 gap-1.5 p-1 bg-white/[0.05] rounded-xl border border-white/10">
                 <button
                   type="button"
-                  onClick={() => setSettingsTab("voices")}
+                  data-haptic="selection"
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setSettingsTab("voices");
+                  }}
                   className={`min-h-[42px] flex items-center justify-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
                     settingsTab === "voices"
                       ? "bg-sky-500 text-slate-950"
@@ -931,7 +973,11 @@ export default function App() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSettingsTab("history")}
+                  data-haptic="selection"
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setSettingsTab("history");
+                  }}
                   className={`min-h-[42px] flex items-center justify-center gap-1.5 px-3 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
                     settingsTab === "history"
                       ? "bg-sky-500 text-slate-950"
@@ -958,7 +1004,9 @@ export default function App() {
                       return (
                         <div
                           key={v.id}
+                          data-haptic="selection"
                           onClick={() => {
+                            triggerHaptic("selection");
                             setSelectedVoice(v.id);
                             if (isLiveConnected) stopLiveSession();
                           }}
@@ -986,8 +1034,10 @@ export default function App() {
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 type="button"
+                                data-haptic="medium"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  triggerHaptic("medium");
                                   handleReplayText(
                                     v.samplePhrase,
                                     v.id,
@@ -1013,8 +1063,10 @@ export default function App() {
 
                               <button
                                 type="button"
+                                data-haptic="selection"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  triggerHaptic("selection");
                                   setSelectedVoice(v.id);
                                   if (isLiveConnected) stopLiveSession();
                                 }}
@@ -1050,7 +1102,11 @@ export default function App() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setSettingsTab("history")}
+                      data-haptic="selection"
+                      onClick={() => {
+                        triggerHaptic("selection");
+                        setSettingsTab("history");
+                      }}
                       className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-sky-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                     >
                       <MessageSquare className="w-3.5 h-3.5 shrink-0" />
@@ -1093,14 +1149,16 @@ export default function App() {
                           {item.agentText && (
                             <button
                               type="button"
-                              onClick={() =>
+                              data-haptic="medium"
+                              onClick={() => {
+                                triggerHaptic("medium");
                                 handleReplayText(
                                   item.agentText,
                                   item.voiceName,
                                   item.audioBase64,
                                   item.id
-                                )
-                              }
+                                );
+                              }}
                               className="min-h-[36px] inline-flex items-center gap-1.5 text-xs font-medium text-sky-400 hover:text-sky-300 pt-1 cursor-pointer"
                             >
                               {playingId === item.id ? (
@@ -1129,7 +1187,11 @@ export default function App() {
               {settingsTab === "history" && history.length > 0 ? (
                 <button
                   type="button"
-                  onClick={() => setHistory([])}
+                  data-haptic="warning"
+                  onClick={() => {
+                    triggerHaptic("warning");
+                    setHistory([]);
+                  }}
                   className="min-h-[42px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-xs font-medium text-red-300 transition-colors whitespace-nowrap cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5 shrink-0" />
@@ -1144,7 +1206,11 @@ export default function App() {
 
               <button
                 type="button"
-                onClick={() => setShowSettingsModal(false)}
+                data-haptic="light"
+                onClick={() => {
+                  triggerHaptic("light");
+                  setShowSettingsModal(false);
+                }}
                 className="min-h-[42px] px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
                 Done

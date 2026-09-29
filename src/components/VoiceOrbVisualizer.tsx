@@ -259,6 +259,7 @@ export const VoiceOrbVisualizer: React.FC<VoiceOrbVisualizerProps> = ({
       <button
         type="button"
         onClick={onPrimaryToggle}
+        data-haptic="heavy"
         aria-label={
           state === "idle" ? "Tap to talk to voice assistant" : "Stop session"
         }
