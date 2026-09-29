@@ -1,0 +1,6 @@
+{
+  "name": "Voxa — AI Voice Agent",
+  "description": "Real-time conversational AI voice agent with live duplex audio streaming, customizable voice personas, and interactive session transcripts.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
