@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tegra-voice-agent
+    env: node
+    buildCommand: bun install && bun run build
+    startCommand: node server.ts
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production

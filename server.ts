@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import http from "http";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { WebSocketServer, WebSocket } from "ws";
@@ -474,18 +475,21 @@ async function startServer() {
     });
   });
 
-  if (process.env.NODE_ENV !== "production") {
+  const distPath = path.join(__dirname, "dist");
+  const hasDist = fs.existsSync(path.join(distPath, "index.html"));
+
+  if (process.env.NODE_ENV === "production" && hasDist) {
+    app.use(express.static(distPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  } else {
+    // Dynamic Vite middleware (handles dev or when dist wasn't prebuilt)
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(__dirname, "dist");
-    app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
   }
 
   server.listen(PORT, "0.0.0.0", () => {
